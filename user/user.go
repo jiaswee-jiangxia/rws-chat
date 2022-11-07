@@ -24,7 +24,7 @@ type User struct {
 	MessageChan chan redis.Message
 }
 
-//Connect connect user to user channels on redis
+// Connect connect user to user channels on redis
 func Connect(rdb *redis.Client, name string) (*User, error) {
 	if _, err := rdb.SAdd(usersKey, name).Result(); err != nil {
 		return nil, err
@@ -46,7 +46,6 @@ func Connect(rdb *redis.Client, name string) (*User, error) {
 func (u *User) Subscribe(rdb *redis.Client, channel string) error {
 
 	userChannelsKey := fmt.Sprintf(userChannelFmt, u.name)
-
 	if rdb.SIsMember(userChannelsKey, channel).Val() {
 		return nil
 	}
@@ -60,6 +59,7 @@ func (u *User) Subscribe(rdb *redis.Client, channel string) error {
 func (u *User) Unsubscribe(rdb *redis.Client, channel string) error {
 
 	userChannelsKey := fmt.Sprintf(userChannelFmt, u.name)
+	fmt.Println(userChannelsKey, channel)
 
 	if !rdb.SIsMember(userChannelsKey, channel).Val() {
 		return nil
@@ -153,7 +153,11 @@ func (u *User) Disconnect() error {
 	return nil
 }
 
-func Chat(rdb *redis.Client, channel string, content string) error {
+func Chat(rdb *redis.Client, channel string, content string, username string) error {
+	userChannelsKey := fmt.Sprintf(userChannelFmt, username)
+	if !rdb.SIsMember(userChannelsKey, channel).Val() {
+		return nil
+	}
 	return rdb.Publish(channel, content).Err()
 }
 

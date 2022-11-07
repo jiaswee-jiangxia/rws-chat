@@ -32,7 +32,7 @@ const (
 )
 
 func ChatWebSocketHandler(w http.ResponseWriter, r *http.Request, rdb *redis.Client) {
-
+	r.Header.Set("Origin", "ws://localhost:8080")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		handleWSError(err, conn)
@@ -115,7 +115,8 @@ func onUserMessage(conn *websocket.Conn, r *http.Request, rdb *redis.Client) {
 			handleWSError(err, conn)
 		}
 	case commandChat:
-		if err := user.Chat(rdb, msg.Channel, msg.Content); err != nil {
+		username := r.URL.Query()["username"][0]
+		if err := user.Chat(rdb, msg.Channel, msg.Content, username); err != nil {
 			handleWSError(err, conn)
 		}
 	}
